@@ -77,11 +77,12 @@ const add_card = {
 				title = t;
 			},
 			send: () => {
+				console.log(title);
 				POST("/indicator", {
 					title: title
 				}).then(()=> {
 					title = "";
-					GET("/indicators").then(model.indicators)
+					GET("/indicators").then(model.indicators);
 				});
 			}
 		};
@@ -97,7 +98,7 @@ const add_card = {
 							help: 'Voer de omschrijing van je nieuwe meetlat in',
 							events: {
 								oninput: () => {}, // only update on blur
-								onchange: (e) => ctrl.update(e.target.value)
+								onchange: (e) => {ctrl.set(e.target.value);}
 							},
 							value: () => (ctrl.get())
 						}),
@@ -105,7 +106,7 @@ const add_card = {
 							label: 'Inzenden',
 							raised: true,
 							events: {
-								onclick: () => ctrl.send()
+								onclick: () => {ctrl.send()}
 							}
 						})
 					]
