@@ -70,13 +70,19 @@ const add_card = {
 	controller: () => {
 		var title = "";
 		return {
-			update: (t) => {
+			get: () => {
+				return title;
+			},
+			set: (t) => {
 				title = t;
 			},
 			send: () => {
 				POST("/indicator", {
 					title: title
-				}).then(()=>GET("/indicators").then(model.indicators));
+				}).then(()=> {
+					title = "";
+					GET("/indicators").then(model.indicators)
+				});
 			}
 		};
 	},
@@ -93,6 +99,7 @@ const add_card = {
 								oninput: () => {}, // only update on blur
 								onchange: (e) => ctrl.update(e.target.value)
 							},
+							value: () => (ctrl.get())
 						}),
 						m.component(button, {
 							label: 'Inzenden',
