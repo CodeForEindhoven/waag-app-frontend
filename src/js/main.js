@@ -1,9 +1,13 @@
 import m from 'mithril';
-import button from 'polythene/button/button';
+
 
 import card from 'polythene/card/card';
 import slider from 'polythene/slider/slider';
+import textfield from 'polythene/textfield/textfield';
+import button from 'polythene/button/button';
+
 import headerPanel from 'polythene/header-panel/header-panel';
+
 
 import 'polythene/theme/theme';
 
@@ -28,6 +32,10 @@ var model = {
 };
 var endpoint = "http://localhost:8080/api";
 
+function xhrConfig(xhr) {
+	xhr.setRequestHeader("Content-Type", "application/json");
+}
+
 function GET(url){
 	return m.request({method: "GET", url: endpoint+url});
 }
@@ -39,7 +47,68 @@ function POST(url, data){
 POST("/handshake").then(model.handshake);
 GET("/indicators").then(model.indicators);
 
+window.setInterval(function () {
+	GET("/indicators").then(model.indicators);
+}, 2000);
+
+
 const app = {
+	controller:() => {
+	},
+
+	view:(ctrl) => {
+		return m('div', {class:"page"}, [
+			m.component(add_card),
+			m('div', model.indicators().map((indicator)=>{
+				return m.component(indicator_card, indicator);
+			}))
+		]);
+	}
+};
+
+const add_card = {
+	controller: () => {
+		var title = "";
+		return {
+			update: (t) => {
+				title = t;
+			},
+			send: () => {
+				POST("/indicator", {
+					title: title
+				}).then(()=>GET("/indicators").then(model.indicators));
+			}
+		};
+	},
+	view: (ctrl) => {
+		return m.component(card, {
+			content: [{
+				text: {
+					content: [
+						m.component(textfield, {
+							label: 'Nieuwe Meetlat',
+							floatingLabel: true,
+							help: 'Voer de omschrijing van je nieuwe meetlat in',
+							events: {
+								oninput: () => {}, // only update on blur
+								onchange: (e) => ctrl.update(e.target.value)
+							},
+						}),
+						m.component(button, {
+							label: 'Inzenden',
+							raised: true,
+							events: {
+								onclick: () => ctrl.send()
+							}
+						})
+					]
+				}
+			}]
+		});
+	}
+};
+
+const indicator_card = {
 	controller:() => {
 		return {
 			update: (id,score) => {
@@ -52,34 +121,33 @@ const app = {
 		};
 	},
 
-	view:(ctrl) => {
-		return m('div', {class:"page"}, model.indicators().map((indicator)=>{
-			if(!indicator.score){
-				indicator.score = 5;
-			}
-			return m.component(card, {
-				content: [{
-					text: {
-						content: [
-							m("div", {class: "omschrijving"}, indicator.title),
-							m.component(slider, {
-								min: 0,
-								max: 10,
-								value: indicator.score,
-								step: 1,
-								ticks: true,
-								pin: true,
-								getValue: (v) => {
-									if(v !== indicator.score){
-										ctrl.update(indicator.id, v);
-									}
+	view:(ctrl, indicator) => {
+		if(!indicator.score){
+			indicator.score = 5;
+		}
+		return m.component(card, {
+			content: [{
+				text: {
+					content: [
+						m("div", {class: "omschrijving"}, indicator.title),
+						m.component(slider, {
+							min: 0,
+							max: 10,
+							value: indicator.score,
+							step: 1,
+							ticks: true,
+							pin: true,
+							getValue: (v) => {
+								if(v !== indicator.score){
+									indicator.score = v;
+									ctrl.update(indicator.id, v);
 								}
-							})
-						]
-					}
-				}]
-			});
-		}));
+							}
+						})
+					]
+				}
+			}]
+		});
 	}
 };
 
